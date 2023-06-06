@@ -7,16 +7,16 @@ ini_set('display_startup_errors', 1);
 
 error_reporting(E_ALL);
 
-if (isset($_SESSION['user'])){
-    $stmt = $pdo->prepare("SELECT `status` FROM account WHERE user=?");
-    $stmt->execute([$_SESSION['user']]);
-    if ($stmt->fetchAll()[0]['status'] == 'not_verified'){
-        header("Location: ../mail/verify.php");
-        exit();
-    } else {
+if (isset($_SESSION['user'])) {
+  $stmt = $pdo->prepare("SELECT `status` FROM account WHERE user=?");
+  $stmt->execute([$_SESSION['user']]);
+  if ($stmt->fetchAll()[0]['status'] == 'not_verified') {
+    header("Location: ../mail/verify.php");
+    exit();
+  } else {
     header("Location: dashboard");
     exit();
-    }
+  }
 
 }
 
@@ -26,6 +26,15 @@ if (isset($_SESSION['user'])){
 <html lang="en">
 
 <head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-CB8848C3QW"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    gtag('config', 'G-CB8848C3QW');
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="64d58efce2.js" crossorigin="anonymous"></script>
@@ -162,7 +171,7 @@ if (isset($_SESSION['user'])){
       signupMsg.style.color = 'red';
     }
 
-    if (urlParams.get('code')=='signup'){
+    if (urlParams.get('code') == 'signup') {
       container.classList.add("sign-up-mode");
     }
   </script>

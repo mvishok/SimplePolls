@@ -16,7 +16,7 @@ $maxip = $stmt->fetchColumn();
 
 $voted = false;
 
-if ($votes==$maxip){
+if ($votes == $maxip) {
     $voted = true;
     $stmt = $pdo->prepare("SELECT opt FROM votes WHERE ip=? and poll=?");
     $stmt->execute([get_client_ip(), $pid]);
@@ -61,6 +61,15 @@ $sum = array_sum($data);
 <html lang="en">
 
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-CB8848C3QW"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'G-CB8848C3QW');
+    </script>
     <meta charset="UTF-8">
     <title>SimplePolls -
         <?php echo $question; ?>
