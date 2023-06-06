@@ -25,7 +25,7 @@ if (isset($_POST['question']) && isset($_POST['options'])) {
 		$answers[$option] = 0;
 	}
 
-	if (isset($_POST['maxResponses']) && $_POST['maxResponses']>0) {
+	if (isset($_POST['maxResponses']) && $_POST['maxResponses'] > 0) {
 		$max = safevar($_POST['maxResponses']);
 	} else {
 		$max = 1;
@@ -47,7 +47,7 @@ if (isset($_POST['question']) && isset($_POST['options'])) {
 	}
 	$stmt = $pdo->prepare("INSERT INTO poll (question, options, owner, bgc, fgc, textc, max) VALUES (?, ?, ?, ?, ?, ?, ?)");
 	$stmt->execute([$question, serialize($answers), $_SESSION['user'], $bgc, $fgc, $textc, $max]);
-	$created=true;
+	$created = true;
 
 }
 ?>
@@ -56,10 +56,21 @@ if (isset($_POST['question']) && isset($_POST['options'])) {
 <html lang="en">
 
 <head>
+	<!-- Google tag (gtag.js) -->
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-CB8848C3QW"></script>
+	<script>
+		window.dataLayer = window.dataLayer || [];
+		function gtag() { dataLayer.push(arguments); }
+		gtag('js', new Date());
+
+		gtag('config', 'G-CB8848C3QW');
+	</script>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Create Poll</title>
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+		integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+		crossorigin="anonymous" referrerpolicy="no-referrer" />
 	<style>
 		body {
 			font-family: Arial, sans-serif;
@@ -139,99 +150,100 @@ if (isset($_POST['question']) && isset($_POST['options'])) {
 			font-size: 16px;
 			cursor: pointer;
 		}
+
 		.sidebar {
-            width: 200px;
-            background-color: #333;
-            color: #fff;
-            height: 100vh;
-            position: fixed;
-            left: 0;
-            top: 0;
-            padding-top: 60px;
-        }
+			width: 200px;
+			background-color: #333;
+			color: #fff;
+			height: 100vh;
+			position: fixed;
+			left: 0;
+			top: 0;
+			padding-top: 60px;
+		}
 
-        .sidebar ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
+		.sidebar ul {
+			list-style: none;
+			padding: 0;
+			margin: 0;
+		}
 
-        .sidebar li {
-            padding: 10px;
-        }
+		.sidebar li {
+			padding: 10px;
+		}
 
-        .sidebar a {
-            color: #fff;
-            text-decoration: none;
-        }
+		.sidebar a {
+			color: #fff;
+			text-decoration: none;
+		}
 
-        .sidebar a:hover {
-            opacity: 0.8;
-        }
+		.sidebar a:hover {
+			opacity: 0.8;
+		}
 
-        .dashboard {
-            margin-left: 200px;
-            padding: 20px;
-        }
+		.dashboard {
+			margin-left: 200px;
+			padding: 20px;
+		}
 
-        .dashboard h2 {
-            text-align: center;
-            font-size: 24px;
-            margin-bottom: 20px;
-        }
+		.dashboard h2 {
+			text-align: center;
+			font-size: 24px;
+			margin-bottom: 20px;
+		}
 
-        .settings-form {
-            max-width: 500px;
-            margin: 0 auto;
-        }
+		.settings-form {
+			max-width: 500px;
+			margin: 0 auto;
+		}
 
-        .settings-form label {
-            display: block;
-            margin-bottom: 10px;
-            font-weight: bold;
-        }
+		.settings-form label {
+			display: block;
+			margin-bottom: 10px;
+			font-weight: bold;
+		}
 
-        .settings-form input[type="text"],
-        .settings-form input[type="password"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            margin-bottom: 20px;
-        }
+		.settings-form input[type="text"],
+		.settings-form input[type="password"] {
+			width: 100%;
+			padding: 10px;
+			border: 1px solid #ccc;
+			border-radius: 4px;
+			margin-bottom: 20px;
+		}
 
-        .settings-form button {
-            padding: 10px 20px;
-            background-color: #333;
-            color: #fff;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
+		.settings-form button {
+			padding: 10px 20px;
+			background-color: #333;
+			color: #fff;
+			border: none;
+			border-radius: 4px;
+			cursor: pointer;
+		}
 
-        .menu-button {
-            color: #333;
-            font-size: 24px;
-            cursor: pointer;
-            position: fixed;
-            left: 20px;
-            top: 20px;
-            z-index: 999;
-        }
+		.menu-button {
+			color: #333;
+			font-size: 24px;
+			cursor: pointer;
+			position: fixed;
+			left: 20px;
+			top: 20px;
+			z-index: 999;
+		}
 	</style>
 </head>
 
 <body>
 	<div class="sidebar">
-        <h3 style="position: absolute; top: 5px; left: 5px;">SimplePolls</h3>
-        <ul>
-            <li><a href="index.php"><i class="fas fa-home"></i> Dashboard</a></li>
-            <li><a href="poll.php"><i class="fas fa-plus"></i> New Poll</a></li>
-            <li><a href=""><i class="fas fa-cog"></i> Account Settings</a></li>
-            <li><a href="#"><i class="fas fa-trash-alt"></i> Delete Account</a></li>
-            <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Log Out</a></li>
-        </ul>
-    </div>
+		<h3 style="position: absolute; top: 5px; left: 5px;">SimplePolls</h3>
+		<ul>
+			<li><a href="index.php"><i class="fas fa-home"></i> Dashboard</a></li>
+			<li><a href="poll.php"><i class="fas fa-plus"></i> New Poll</a></li>
+			<li><a href=""><i class="fas fa-cog"></i> Account Settings</a></li>
+			<li><a href="#"><i class="fas fa-trash-alt"></i> Delete Account</a></li>
+			<li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Log Out</a></li>
+		</ul>
+	</div>
 	<?php if ($created) { ?>
 		<div class="container">
 			<h1>Poll Created Successfully</h1>

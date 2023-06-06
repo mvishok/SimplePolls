@@ -31,7 +31,18 @@ foreach ($data as $i) {
 <html lang="en">
 
 <head>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-CB8848C3QW"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'G-CB8848C3QW');
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
     <meta charset="UTF-8">
     <title>SimplePolls Dashboard</title>
     <style>
@@ -194,7 +205,8 @@ foreach ($data as $i) {
             <li><a href=""><i class="fas fa-home"></i> Dashboard</a></li>
             <li><a href="poll.php"><i class="fas fa-plus"></i> New Poll</a></li>
             <li><a href="settings.php"><i class="fas fa-cog"></i> Account Settings</a></li>
-            <li><a href="javascript:void(0);" onclick="javascript:deleteAction('acc')"><i class="fas fa-trash-alt"></i> Delete
+            <li><a href="javascript:void(0);" onclick="javascript:deleteAction('acc')"><i class="fas fa-trash-alt"></i>
+                    Delete
                     Account</a></li>
             <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Log Out</a></li>
         </ul>
@@ -236,8 +248,8 @@ foreach ($data as $i) {
                         </p>
                     </div>
                     <div class="actions">
-                        <i onClick="copy(<?php echo $i[3];?>)" class="fas fa-link"></i> <!-- # Icon -->
-                        <i onClick="deleteAction('poll', <?php echo $i[3];?>)" class="fas fa-trash-alt"></i> <!-- $ Icon -->
+                        <i onClick="copy(<?php echo $i[3]; ?>)" class="fas fa-link"></i> <!-- # Icon -->
+                        <i onClick="deleteAction('poll', <?php echo $i[3]; ?>)" class="fas fa-trash-alt"></i> <!-- $ Icon -->
                     </div>
                 </div>
             <?php } ?>
@@ -245,19 +257,19 @@ foreach ($data as $i) {
     </div>
 
     <script>
-        function deleteAction(action, pid=0) {
+        function deleteAction(action, pid = 0) {
             var answer = confirm('This action cannot be undone. Are you sure you want to perform this action?');
             if (answer) {
-                if (action == "acc"){
-                location.href = 'delete.php?action=acc';
-                } else if (action == "poll"){
-                    location.href = 'delete.php?action=poll&pid='+pid;
+                if (action == "acc") {
+                    location.href = 'delete.php?action=acc';
+                } else if (action == "poll") {
+                    location.href = 'delete.php?action=poll&pid=' + pid;
                 }
             }
         }
 
         function copy(data) {
-            navigator.clipboard.writeText("https://polls.vishok.tech/polls?pid="+data);
+            navigator.clipboard.writeText("https://polls.vishok.tech/polls?pid=" + data);
             alert("Link copied to clipboard");
         }
     </script>
