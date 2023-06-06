@@ -25,7 +25,7 @@ if (isset($_POST['question']) && isset($_POST['options'])) {
 		$answers[$option] = 0;
 	}
 
-	if (isset($_POST['maxResponses'])) {
+	if (isset($_POST['maxResponses']) && $_POST['maxResponses']>0) {
 		$max = safevar($_POST['maxResponses']);
 	} else {
 		$max = 1;
@@ -45,13 +45,8 @@ if (isset($_POST['question']) && isset($_POST['options'])) {
 	} else {
 		$textc = '#fff';
 	}
-	
-	try {
-		$stmt = $pdo->prepare("INSERT INTO poll (question, options, owner, bgc, fgc, textc) VALUES (?, ?, ?, ?, ?, ?)");
-		$stmt->execute([$question, serialize($answers), $_SESSION['user'], $bgc, $fgc, $textc]);
-	} catch (Exception $e) {
-		echo "Error";
-	}
+	$stmt = $pdo->prepare("INSERT INTO poll (question, options, owner, bgc, fgc, textc, max) VALUES (?, ?, ?, ?, ?, ?, ?)");
+	$stmt->execute([$question, serialize($answers), $_SESSION['user'], $bgc, $fgc, $textc, $max]);
 	$created=true;
 
 }

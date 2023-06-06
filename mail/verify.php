@@ -1,6 +1,7 @@
-<?php 
+<?php
 session_start();
 include("../db/conn.php");
+include("mailer.php");
 if (isset($_SESSION['user'])){
     $stmt = $pdo->prepare("SELECT `status` FROM account WHERE user=?");
     $stmt->execute([$_SESSION['user']]);
@@ -65,20 +66,12 @@ if (isset($_POST['1']) && isset($_POST['2']) && isset($_POST['3']) && isset($_PO
     $email = $stmt->fetchAll()[0]['email'];
 
     #Finalize body of verification mail
-    $body = file_get_contents('templates/verify.html');
+    $body = file_get_contents('templates/verify.html'); 
     $body = str_replace("{{user}}", $_SESSION['user'], $body);
     $body = str_replace("{{otp}}", $OTP, $body);
 
-    #Set subject and headers
-    $subject = "Verify your SimplePolls account";
-    $headers = 'MIME-Version: 1.0'."\r\n";
-    $headers .="Content-Type: text/html\r\n";
-    $headers .= "From: no-reply@vishok.poll.tech\r\n". 
-    'Reply-To: ' . $email. "\r\n" . 
-    'X-Mailer: PHP/' . phpversion();
-
     #Send it
-    mail($email,$subject,$body,$headers);
+    sendmail($email, $_SESSION['user'], $subject,$body);
 }
 ?>
 
@@ -91,7 +84,7 @@ if (isset($_POST['1']) && isset($_POST['2']) && isset($_POST['3']) && isset($_PO
    <title>OTP Verification</title>
     <link rel="stylesheet" href="style.css" />
     <!-- Boxicons CSS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.0/dist/boxicons.js" integrity="sha512-Dm5UxqUSgNd93XG7eseoOrScyM1BVs65GrwmavP0D0DujOA8mjiBfyj71wmI2VQZKnnZQsSWWsxDKNiQIqk8sQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.0/css/boxicons.css" integrity="sha512-j+idvE15yGD+P0xIk4S6BDPdVT3PbJFkR6Ap6M6EBIbkTcD+E/2GJ/JYkMRHycfgkdKbn+wKaiPswUCZVNR9Gw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="script.js" defer></script>
   </head>
   <body>

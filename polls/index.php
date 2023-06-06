@@ -6,11 +6,24 @@ include('../misc/client.php');
 
 $pid = safevar($_GET['pid']);
 
-$stmt = $pdo->prepare("SELECT opt FROM votes WHERE ip=? and poll=?");
+$stmt = $pdo->prepare("SELECT COUNT(*) FROM votes WHERE ip=? and poll=?");
 $stmt->execute([get_client_ip(), $pid]);
-$opt = $stmt->fetchColumn();
+$votes = $stmt->fetchColumn();
+
+$stmt = $pdo->prepare("SELECT max FROM poll WHERE id=?");
+$stmt->execute([$pid]);
+$maxip = $stmt->fetchColumn();
 
 $voted = false;
+
+if ($votes==$maxip){
+    $voted = true;
+    $stmt = $pdo->prepare("SELECT opt FROM votes WHERE ip=? and poll=?");
+    $stmt->execute([get_client_ip(), $pid]);
+    $opt = $stmt->fetchColumn();
+}
+
+
 
 if ($opt) {
     $voted = true;
