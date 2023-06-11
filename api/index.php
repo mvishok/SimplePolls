@@ -209,3 +209,53 @@ function vote()
         exit();
     }
 }
+
+function delete(){
+    global $pdo;
+    if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['pid']) && isset($_GET['api_key'])) {
+        $pid = safevar($_GET['pid']);
+        $api_key = safevar($_GET['api_key']);
+        try {
+            $stmt = $pdo->prepare("SELECT user FROM account WHERE api=?");
+            $stmt->execute([$api_key]);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            $user = $result['user'];
+        } catch (PDOException $e) {
+            $response = array(
+                'message' => "error",
+                'error' => "Invalid API key"
+            );
+
+            echo json_encode($response);
+            exit();
+        }
+
+        try {
+            $stmt = $pdo->prepare("DELETE FROM poll WHERE `owner`=? AND id=?");
+            $stmt->execute([$user, $pid]);
+        } catch (PDOException $e) {
+            $response = array(
+                'message' => "error",
+                'error' => "Error deleting poll"
+            );
+
+            echo json_encode($response);
+            exit();
+        }
+
+        $response = array(
+            'message' => "success",
+        );
+
+        echo json_encode($response);
+        exit();
+    } else {
+        $response = array(
+            'message' => "error",
+            'error' => "Invalid request"
+        );
+
+        echo json_encode($response);
+        exit();       
+    }
+}
