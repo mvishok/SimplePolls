@@ -41,14 +41,16 @@ if (empty($user)) {
     $existingUser = $row[0]['user'];
     $existingEmail = $row[0]['email'];
 
+    $apiKey = base64_encode(random_bytes(32));
+
     if ($existingUser or $existingEmail) {
         header("Location: index.php?code=5S");
         exit();
     } else {
 
         try {
-            $stmt = $pdo->prepare("INSERT INTO account (user, pass, email) VALUES (?, ?, ?)");
-            $stmt->execute([$user, password_hash($pass, PASSWORD_DEFAULT), $email]);
+            $stmt = $pdo->prepare("INSERT INTO account (user, pass, email, api) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$user, password_hash($pass, PASSWORD_DEFAULT), $email, $apiKey]);
             header("Location: index.php?code=0S");
             exit();
         } catch (Exception $e) {

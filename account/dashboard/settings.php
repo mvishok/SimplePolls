@@ -65,14 +65,20 @@ if (isset($_POST['name']) && isset($_POST['email']) && isset($_POST['password'])
             $sucess = true;
         }
     }
+
+    $stmt = $pdo->prepare("SELECT api FROM account WHERE user=?");
+    $stmt->execute([$givenUser]);
+    
+    $api = $stmt->fetchAll()[0]['api'];
     $user = $givenUser;
     $email = $givenEmail;
 } else {
-    $stmt = $pdo->prepare("SELECT user, email FROM account WHERE user=?");
+    $stmt = $pdo->prepare("SELECT user, email, api FROM account WHERE user=?");
     $stmt->execute([$_SESSION['user']]);
     $row = $stmt->fetchAll()[0];
     $user = $row['user'];
     $email = $row['email'];
+    $api = $row['api'];
 }
 ?>
 
@@ -219,6 +225,9 @@ if (isset($_POST['name']) && isset($_POST['email']) && isset($_POST['password'])
 
                 <label for="password">Password:</label>
                 <input type="password" id="password" name="password" placeholder="Enter your current password">
+
+                <label for="password">API:</label>
+                <input type="text" id="api_key" name="api_key" value="<?php echo $api; ?>" disabled>
 
                 <button type="submit">Save Changes</button>
             </form>
