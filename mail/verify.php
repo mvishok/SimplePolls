@@ -1,5 +1,6 @@
 <?php
 session_start();
+error_reporting(0);
 include("../db/conn.php");
 include("mailer.php");
 if (isset($_SESSION['user'])) {
