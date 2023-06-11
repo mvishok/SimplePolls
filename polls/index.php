@@ -1,4 +1,5 @@
 <?php
+error_reporting(0);
 
 include('../db/conn.php');
 include('../misc/safe.php');
