@@ -32,6 +32,10 @@ switch ($route) {
         getKey();
         break;
 
+    case 'verify':
+        verifyEmail();
+        break;
+
     default:
         header('Content-Type: application/json');
         http_response_code(404);
@@ -39,6 +43,20 @@ switch ($route) {
         exit();
 }
 
+function checkAcc($user){
+    global $pdo;
+    $stmt = $pdo->prepare("SELECT `status` FROM account WHERE user=?");
+    $stmt->execute($user);
+    if ($stmt->fetchAll()[0]['status'] == 'not_verified') {
+        $response = array(
+            'message' => "error",
+            'error' => "Account email not verified"
+        );
+
+        echo json_encode($response);
+        exit();
+    }
+}
 function createPoll()
 {
     global $pdo;
@@ -72,6 +90,7 @@ function createPoll()
         $textc = safevar($_GET['text']);
 
         try {
+            checkAcc($user);
             $stmt = $pdo->prepare("INSERT INTO poll (question, options, owner, bgc, fgc, textc, max) VALUES (?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([$question, serialize($answers), $user, $bgc, $fgc, $textc, $max]);
         } catch (PDOException $e) {
@@ -239,6 +258,7 @@ function delete(){
         }
 
         try {
+            checkAcc($user);
             $stmt = $pdo->prepare("DELETE FROM poll WHERE `owner`=? AND id=?");
             $stmt->execute([$user, $pid]);
         } catch (PDOException $e) {
@@ -288,6 +308,7 @@ function getKey(){
             exit();
         }
         if (password_verify($pass, $hash)){
+            checkAcc($user);
             $stmt = $pdo->prepare("SELECT api FROM account WHERE user=?");
             $stmt->execute([$user]);
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -314,4 +335,75 @@ function getKey(){
         echo json_encode($response);
         exit();
     }
+}
+
+function verifyEmail(){
+    global $pdo;
+    if (isset($_POST['otp'])) {
+
+        #Get entered otp
+        $inOTP = $_POST['otp'];
+      
+        #Get existing OTP
+        $stmt = $pdo->prepare("SELECT `otp` FROM verify WHERE user=?");
+        $stmt->execute([$_SESSION['user']]);
+        $OTP = $stmt->fetchAll()[0]['otp'];
+      
+        #Check if they match
+        if ($inOTP == $OTP) {
+          try {
+            $stmt = $pdo->prepare("UPDATE account SET status = 'verified' WHERE user=?");
+            $stmt->execute([$_SESSION['user']]);
+          } catch (Exception $e) {
+            echo "Error occured";
+            exit();
+          }
+          $stmt = $pdo->prepare("DELETE FROM verify WHERE user=?");
+          $stmt->execute([$_SESSION['user']]);
+      
+          $response = array(
+            'message' => "success",
+          );
+          echo json_encode($response);
+          exit();
+        } else {
+            $response = array(
+                'message' => "error",
+                'error' => "Invalid OTP"
+            );
+            echo json_encode($response);
+            exit();
+        }
+      
+      } else {
+      
+        #Generate OTP
+        $OTP = mt_rand(1111, 9999);
+      
+        #Delete existing OTP (if exist)
+        $stmt = $pdo->prepare("DELETE FROM verify WHERE user=?");
+        $stmt->execute([$_SESSION['user']]);
+      
+        #INSERT OTP into db
+        try {
+          $stmt = $pdo->prepare("INSERT INTO verify VALUES (?, ?)");
+          $stmt->execute([$_SESSION['user'], $OTP]);
+        } catch (Exception $e) {
+          echo "Error occured";
+          exit();
+        }
+      
+        #Get user's mail id
+        $stmt = $pdo->prepare("SELECT `email` FROM account WHERE user=?");
+        $stmt->execute([$_SESSION['user']]);
+        $email = $stmt->fetchAll()[0]['email'];
+      
+        #Finalize body of verification mail
+        $body = file_get_contents('templates/verify.html');
+        $body = str_replace("{{user}}", $_SESSION['user'], $body);
+        $body = str_replace("{{otp}}", $OTP, $body);
+      
+        #Send it
+        sendmail($email, $_SESSION['user'], "Verify your SimplePolls Account", $body);
+      }      
 }
