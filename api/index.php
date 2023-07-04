@@ -4,7 +4,7 @@ include('../misc/safe.php');
 include('../misc/client.php');
 
 ini_set('display_errors', 1);
-error_reporting(E_ALL);
+error_reporting(0);
 
 $requestUri = $_SERVER['REQUEST_URI'];
 $basePath = '/api';
@@ -22,6 +22,14 @@ switch ($route) {
 
     case 'vote':
         vote();
+        break;
+
+    case 'delete':
+        delete();
+        break;
+
+    case 'key':
+        getKey();
         break;
 
     default:
@@ -257,5 +265,53 @@ function delete(){
 
         echo json_encode($response);
         exit();       
+    }
+}
+
+function getKey(){
+    global $pdo;
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user']) && isset($_POST['pass'])) {
+        $user = safevar($_POST['user']);
+        $pass = safevar($_POST['pass']);
+        try {
+            $stmt = $pdo->prepare("SELECT pass FROM account WHERE user=?");
+            $stmt->execute([$user]);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            $hash = $result['pass'];
+        } catch (PDOException $e) {
+            $response = array(
+                'message' => "error",
+                'error' => "Invalid username"
+            );
+
+            echo json_encode($response);
+            exit();
+        }
+        if (password_verify($pass, $hash)){
+            $stmt = $pdo->prepare("SELECT api FROM account WHERE user=?");
+            $stmt->execute([$user]);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            $api = $result['api'];
+            $response = array(
+                'message' => "success",
+                'api_key' => $api
+            );
+            echo json_encode($response);
+            exit();
+        } else {
+            $response = array(
+                'message' => "error",
+                'error' => "Invalid password"
+            );
+            echo json_encode($response);
+            exit();
+        }
+    } else {
+        $response = array(
+            'message' => "error",
+            'error' => "Invalid request"
+        );
+        echo json_encode($response);
+        exit();
     }
 }
