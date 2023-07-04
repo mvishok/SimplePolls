@@ -36,6 +36,10 @@ switch ($route) {
         verifyEmail();
         break;
 
+    case 'signup':
+        createAccount();
+        break;
+
     default:
         header('Content-Type: application/json');
         http_response_code(404);
@@ -406,4 +410,81 @@ function verifyEmail(){
         #Send it
         sendmail($email, $_SESSION['user'], "Verify your SimplePolls Account", $body);
       }      
+}
+
+function createAccount(){
+    global $pdo;
+    if (isset($_POST['user']) && isset($_POST['pass']) && isset($_POST['email'])) {
+        $user = safevar($_POST['user']);
+        $pass = safevar($_POST['pass']);
+        $email = safevar($_POST['email']);
+    }
+    if (empty($user)) {
+        $response = array(
+            'message' => "error",
+            'error' => "Username cannot be empty"
+        );
+        echo json_encode($response);
+        exit();
+    } else if (empty($pass)) {
+        $response = array(
+            'message' => "error",
+            'error' => "Password cannot be empty"
+        );
+        echo json_encode($response);
+        exit();
+    } else if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $response = array(
+            'message' => "error",
+            'error' => "Invalid email"
+        );
+        echo json_encode($response);
+        exit();
+    } else if (!username($user)) {
+        $response = array(
+            'message' => "error",
+            'error' => "Invalid username"
+        );
+        echo json_encode($response);
+        exit();
+    } else {
+        $stmt = $pdo->prepare("SELECT user, email FROM account WHERE user=? or email=?");
+        $stmt->execute([$user, $email]);
+        $row = $stmt->fetchAll();
+        $existingUser = $row[0]['user'];
+        $existingEmail = $row[0]['email'];
+    
+        $apiKey = base64_encode(random_bytes(32));
+    
+        if ($existingUser or $existingEmail) {
+            $response = array(
+                'message' => "error",
+                'error' => "Username or email already exists"
+            );
+            echo json_encode($response);
+            exit();
+        } else {
+    
+            try {
+                $stmt = $pdo->prepare("INSERT INTO account (user, pass, email, api) VALUES (?, ?, ?, ?)");
+                $stmt->execute([$user, password_hash($pass, PASSWORD_DEFAULT), $email, $apiKey]);
+                $response = array(
+                    'message' => "success",
+                    'user' => $user,
+                );
+                echo json_encode($response);
+                exit();
+            } catch (Exception $e) {
+                $response = array(
+                    'message' => "error",
+                    'error' => "Error creating account"
+                );
+                echo json_encode($response);
+                exit();
+            }
+        }
+    
+    
+    }
+    
 }
