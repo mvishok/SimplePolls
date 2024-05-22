@@ -40,6 +40,14 @@ switch ($route) {
         createAccount();
         break;
 
+    case 'user':
+        userDetails();
+        break;
+
+    case 'getvote':
+        getVote();
+        break;
+
     default:
         header('Content-Type: application/json');
         http_response_code(404);
@@ -50,7 +58,7 @@ switch ($route) {
 function checkAcc($user){
     global $pdo;
     $stmt = $pdo->prepare("SELECT `status` FROM account WHERE user=?");
-    $stmt->execute($user);
+    $stmt->execute([$user]);
     if ($stmt->fetchAll()[0]['status'] == 'not_verified') {
         $response = array(
             'message' => "error",
@@ -134,6 +142,9 @@ function getPoll()
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($result) {
+            $stmt = $pdo->prepare("UPDATE poll SET views = views + 1 WHERE id=?");
+            $stmt->execute([$pollId]);
+
             $response = array(
                 'message' => "success",
                 'id' => $result['id'],
@@ -146,6 +157,7 @@ function getPoll()
                 'text' => $result['textc'],
                 'views' => $result['views'],
                 'max_ip' => $result['max'],
+                'author' => $result['owner']
             );
 
             echo json_encode($response);
@@ -157,7 +169,28 @@ function getPoll()
 
             echo json_encode($response);
         }
-    } else {
+    } else if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['key'])) {
+        $key = safevar($_POST['key']);
+        $stmt = $pdo->prepare("SELECT user FROM account WHERE api=?");
+        $stmt->execute([$key]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $user = $result['user'];
+
+        $stmt = $pdo->prepare("SELECT * FROM poll WHERE owner=?");
+        $stmt->execute([$user]);
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $response = array();
+        $response['message'] = "success";
+        foreach ($result as $row){
+            $response[$row['id']] = array(
+                'question' => $row['question'],
+                'total_votes' => array_sum(unserialize($row['options'])),
+                'views' => $row['views'],
+            );
+        }
+        echo json_encode($response);
+    }
+    else {
         $response = array(
             'message' => "error",
             'error' => "Invalid request"
@@ -173,14 +206,21 @@ function vote()
     if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['pid']) && isset($_GET['option'])) {
         $pid = safevar($_GET['pid']);
         $opt = intval($_GET['option']);
+        
         $stmt = $pdo->prepare("SELECT IF((SELECT COUNT(*) FROM votes WHERE ip = ? and poll=?) >= (SELECT `max` FROM poll WHERE id = ?), FALSE, TRUE) AS result;");
         $stmt->execute([get_client_ip(), $pid, $pid]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$result['result']) {
+            $stmt = $pdo->prepare("SELECT opt FROM votes WHERE ip = ? and poll=? ORDER BY id DESC LIMIT 1");
+            $stmt->execute([get_client_ip(), $pid]);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            $latest = $result['opt'];
+
             $response = array(
                 'message' => "error",
-                'error' => "Maximum votes reached"
+                'error' => "Maximum votes reached",
+                'latest' => $latest
             );
 
             echo json_encode($response);
@@ -221,6 +261,10 @@ function vote()
             $stmt->execute([get_client_ip(), $opt, $pid]);
             $stmt = $pdo->prepare("UPDATE poll SET options = ? WHERE id = ?");
             $stmt->execute([$options, $pid]);
+            $response = array(
+                'message' => "success",
+            );
+            echo json_encode($response);
         } catch (PDOException $e) {
             $response = array(
                 'message' => "error",
@@ -243,9 +287,9 @@ function vote()
 
 function delete(){
     global $pdo;
-    if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['pid']) && isset($_GET['api_key'])) {
-        $pid = safevar($_GET['pid']);
-        $api_key = safevar($_GET['api_key']);
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pid']) && isset($_POST['key'])) {
+        $pid = safevar($_POST['pid']);
+        $api_key = safevar($_POST['key']);
         try {
             $stmt = $pdo->prepare("SELECT user FROM account WHERE api=?");
             $stmt->execute([$api_key]);
@@ -343,27 +387,28 @@ function getKey(){
 
 function verifyEmail(){
     global $pdo;
-    if (isset($_POST['otp'])) {
-
+    if ($_SERVER['REQUEST_METHOD'] && isset($_POST['otp']) && isset($_POST['user'])) {
+        
+        $user = safevar($_POST['user']);
         #Get entered otp
         $inOTP = $_POST['otp'];
       
         #Get existing OTP
         $stmt = $pdo->prepare("SELECT `otp` FROM verify WHERE user=?");
-        $stmt->execute([$_SESSION['user']]);
+        $stmt->execute([$user]);
         $OTP = $stmt->fetchAll()[0]['otp'];
       
         #Check if they match
         if ($inOTP == $OTP) {
           try {
             $stmt = $pdo->prepare("UPDATE account SET status = 'verified' WHERE user=?");
-            $stmt->execute([$_SESSION['user']]);
+            $stmt->execute([$user]);
           } catch (Exception $e) {
             echo "Error occured";
             exit();
           }
           $stmt = $pdo->prepare("DELETE FROM verify WHERE user=?");
-          $stmt->execute([$_SESSION['user']]);
+          $stmt->execute([$user]);
       
           $response = array(
             'message' => "success",
@@ -379,19 +424,21 @@ function verifyEmail(){
             exit();
         }
       
-      } else {
+      } else if ($_POST['user']) {
+
+        $user = safevar($_POST['user']);
       
         #Generate OTP
         $OTP = mt_rand(1111, 9999);
       
         #Delete existing OTP (if exist)
         $stmt = $pdo->prepare("DELETE FROM verify WHERE user=?");
-        $stmt->execute([$_SESSION['user']]);
+        $stmt->execute([$user]);
       
         #INSERT OTP into db
         try {
           $stmt = $pdo->prepare("INSERT INTO verify VALUES (?, ?)");
-          $stmt->execute([$_SESSION['user'], $OTP]);
+          $stmt->execute([$user, $OTP]);
         } catch (Exception $e) {
           echo "Error occured";
           exit();
@@ -399,16 +446,23 @@ function verifyEmail(){
       
         #Get user's mail id
         $stmt = $pdo->prepare("SELECT `email` FROM account WHERE user=?");
-        $stmt->execute([$_SESSION['user']]);
+        $stmt->execute([$user]);
         $email = $stmt->fetchAll()[0]['email'];
       
         #Finalize body of verification mail
         $body = file_get_contents('templates/verify.html');
-        $body = str_replace("{{user}}", $_SESSION['user'], $body);
+        $body = str_replace("{{user}}", $user, $body);
         $body = str_replace("{{otp}}", $OTP, $body);
       
         #Send it
-        sendmail($email, $_SESSION['user'], "Verify your SimplePolls Account", $body);
+        sendmail($email, $user, "Verify your SimplePolls Account", $body);
+      } else {
+        $response = array(
+            'message' => "error",
+            'error' => "Invalid request"
+        );
+        echo json_encode($response);
+        exit();
       }      
 }
 
@@ -487,4 +541,82 @@ function createAccount(){
     
     }
     
+}
+
+function userDetails() {
+    global $pdo;
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['key']) && $_POST['key']!="") {
+        $key = safevar($_POST['key']);
+
+        try{
+        $stmt = $pdo->prepare("SELECT * FROM account WHERE api=?");
+        $stmt->execute([$key]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            $response = array(
+                'message' => "error",
+                'error' => "Invalid API key"
+            );
+
+            echo json_encode($response);
+            exit();
+        }
+        $response = array(
+            'message' => "success",
+            'user' => $result['user'],
+        );
+        echo json_encode($response);
+        exit();
+    } else {
+        $response = array(
+            'message' => "error",
+            'error' => "Invalid request"
+        );
+        echo json_encode($response);
+        exit();
+    }
+}
+
+function getVote(){
+    global $pdo;
+    if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['pid'])) {
+        $pid = safevar($_GET['pid']);
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM votes WHERE ip=? and poll=?");
+        $stmt->execute([get_client_ip(), $pid]);
+        $votes = $stmt->fetchColumn();
+
+        $stmt = $pdo->prepare("SELECT max FROM poll WHERE id=?");
+        $stmt->execute([$pid]);
+        $maxip = $stmt->fetchColumn();
+
+        if ($votes>0){
+        $stmt = $pdo->prepare("SELECT opt FROM votes WHERE ip=? and poll=?");
+        $stmt->execute([get_client_ip(), $pid]);
+        $opt = $stmt->fetchColumn();
+        } else {
+            $response = array(
+                'message' => "error",
+                'error' => "Not voted yet"
+            );
+            echo json_encode($response);
+            exit();
+        }
+
+        if ($votes == $maxip) {
+            $response = array(
+                'message' => "error",
+                'error' => "Maximum votes reached",
+                'latest' => $opt
+            );
+            echo json_encode($response);
+            exit();
+        } else {
+            $response = array(
+                'message' => "success",
+                'latest' => $opt
+            );
+            echo json_encode($response);
+            exit();
+        }
+    }
 }
