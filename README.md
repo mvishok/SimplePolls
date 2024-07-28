@@ -2,7 +2,7 @@
 ![Logo](https://raw.githubusercontent.com/mvishok/SimplePolls/main/default-monochrome.svg)
 
 
-## Visit Site: https://polls/vishok.tech
+## Visit Site: https://polls.vishok.me
 
 
 # SimplePolls
